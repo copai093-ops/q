@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Endless Runner</title>
+<style>
+    body {
+        margin: 0;
+        background: #222;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    canvas {
+        background: #f4f4f4;
+        border: 3px solid black;
+    }
+</style>
+</head>
+<body>
+
+<canvas id="game" width="800" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+// Player
+let player = {
+    x: 100,
+    y: 300,
+    width: 40,
+    height: 60,
+    dy: 0,
+    jumpPower: -15,
+    gravity: 0.8,
+    grounded: true
+};
+
+// Obstacles
+let obstacles = [];
+let frame = 0;
+let score = 0;
+let gameOver = false;
+
+// Controls
+document.addEventListener("keydown", e => {
+    if (e.code === "Space" && player.grounded) {
+        player.dy = player.jumpPower;
+        player.grounded = false;
+    }
+});
+
+function spawnObstacle() {
+    obstacles.push({
+        x: canvas.width,
+        y: 320,
+        width: 30,
+        height: 40
+    });
+}
+
+function update() {
+    if (gameOver) return;
+
+    frame++;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Player physics
+    player.dy += player.gravity;
+    player.y += player.dy;
+
+    if (player.y >= 300) {
+        player.y = 300;
+        player.dy = 0;
+        player.grounded = true;
+    }
+
+    // Spawn obstacles
+    if (frame % 90 === 0) {
+        spawnObstacle();
+    }
+
+    // Move obstacles
+    obstacles.forEach((obs, index) => {
+        obs.x -= 6;
+
+        // Collision
+        if (
+            player.x < obs.x + obs.width &&
+            player.x + player.width > obs.x &&
+            player.y < obs.y + obs.height &&
+            player.y + player.height > obs.y
+        ) {
+            gameOver = true;
+        }
+
+        if (obs.x + obs.width < 0) {
+            obstacles.splice(index, 1);
+            score++;
+        }
+    });
+
+    // Draw ground
+    ctx.fillStyle = "#999";
+    ctx.fillRect(0, 360, canvas.width, 40);
+
+    // Draw player
+    ctx.fillStyle = "black";
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+    // Draw obstacles
+    ctx.fillStyle = "red";
+    obstacles.forEach(obs => {
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+    });
+
+    // Score
+    ctx.fillStyle = "black";
+    ctx.font = "24px Arial";
+    ctx.fillText("Score: " + score, 20, 30);
+
+    // Game over
+    if (gameOver) {
+        ctx.fillStyle = "red";
+        ctx.font = "40px Arial";
+        ctx.fillText("GAME OVER", 280, 200);
+        ctx.font = "20px Arial";
+        ctx.fillText("Refresh to restart", 320, 240);
+    }
+
+    requestAnimationFrame(update);
+}
+
+update();
+</script>
+
+</body>
+</html>
