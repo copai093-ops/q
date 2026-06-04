@@ -2,139 +2,540 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Endless Runner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShopKart Unlimited</title>
+
 <style>
-    body {
-        margin: 0;
-        background: #222;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
-    canvas {
-        background: #f4f4f4;
-        border: 3px solid black;
-    }
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial;
+}
+
+body{
+background:#f1f3f6;
+}
+
+header{
+background:#2874f0;
+padding:15px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+position:sticky;
+top:0;
+z-index:1000;
+}
+
+header h1{
+color:white;
+font-size:28px;
+}
+
+header input{
+width:50%;
+padding:12px;
+border:none;
+border-radius:5px;
+}
+
+header button{
+background:#ff9f00;
+border:none;
+padding:12px 18px;
+color:white;
+border-radius:5px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.products{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+gap:20px;
+padding:20px;
+}
+
+.card{
+background:white;
+border-radius:10px;
+padding:15px;
+text-align:center;
+box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+.card img{
+width:180px;
+height:180px;
+object-fit:cover;
+border-radius:8px;
+}
+
+.card h3{
+margin-top:10px;
+font-size:20px;
+}
+
+.price{
+color:green;
+font-size:22px;
+font-weight:bold;
+margin-top:10px;
+}
+
+.oldprice{
+text-decoration:line-through;
+color:gray;
+font-size:15px;
+}
+
+.rating{
+background:green;
+color:white;
+display:inline-block;
+padding:4px 8px;
+border-radius:4px;
+margin-top:10px;
+}
+
+.details{
+margin-top:10px;
+color:#444;
+font-size:14px;
+line-height:22px;
+text-align:left;
+}
+
+.card button{
+margin-top:15px;
+width:100%;
+padding:12px;
+background:#2874f0;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+font-size:16px;
+}
+
+#cartPage,
+#successPage{
+display:none;
+background:white;
+margin:20px;
+padding:20px;
+border-radius:10px;
+}
+
+input,textarea{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:1px solid #ccc;
+border-radius:5px;
+}
+
+.placeBtn{
+background:green;
+color:white;
+border:none;
+padding:14px;
+margin-top:15px;
+width:100%;
+border-radius:5px;
+cursor:pointer;
+font-size:18px;
+}
+
+.removeBtn{
+background:red;
+color:white;
+border:none;
+padding:5px 10px;
+border-radius:4px;
+cursor:pointer;
+margin-left:10px;
+}
+
+.total{
+margin-top:15px;
+font-size:24px;
+font-weight:bold;
+}
+
+.success{
+font-size:28px;
+color:green;
+margin-bottom:20px;
+}
+
 </style>
 </head>
+
 <body>
 
-<canvas id="game" width="800" height="400"></canvas>
+<header>
+
+<h1>ShopKart</h1>
+
+<input type="text" id="search" placeholder="Search products...">
+
+<button onclick="showCart()">
+Cart (<span id="cartCount">0</span>)
+</button>
+
+</header>
+
+<div class="products" id="products"></div>
+
+<div id="cartPage">
+
+<h2>Your Cart</h2>
+
+<div id="cartItems"></div>
+
+<div class="total" id="total"></div>
+
+<h2 style="margin-top:20px;">Delivery Address</h2>
+
+<input type="text" id="name" placeholder="Full Name">
+
+<input type="text" id="phone" placeholder="Phone Number">
+
+<textarea id="address" placeholder="Full Address"></textarea>
+
+<input type="text" id="pincode" placeholder="Pincode">
+
+<button class="placeBtn" onclick="placeOrder()">
+Place Order
+</button>
+
+</div>
+
+<div id="successPage">
+
+<div class="success">
+Order Placed Successfully!
+</div>
+
+<div id="orderDetails"></div>
+
+<button class="placeBtn" onclick="goHome()">
+Continue Shopping
+</button>
+
+</div>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
 
-// Player
-let player = {
-    x: 100,
-    y: 300,
-    width: 40,
-    height: 60,
-    dy: 0,
-    jumpPower: -15,
-    gravity: 0.8,
-    grounded: true
-};
+let cart = [];
 
-// Obstacles
-let obstacles = [];
-let frame = 0;
-let score = 0;
-let gameOver = false;
+const productNames = [
+"iPhone","Samsung TV","Gaming Laptop","Shoes","Watch",
+"Bluetooth Speaker","Headphones","Keyboard","Mouse",
+"Tablet","Camera","Smartphone","Printer","Monitor",
+"Power Bank","Drone","AirPods","T-Shirt","Jeans",
+"Jacket","Bag","Cycle","Sofa","Chair","Bed","Fan"
+];
 
-// Controls
-document.addEventListener("keydown", e => {
-    if (e.code === "Space" && player.grounded) {
-        player.dy = player.jumpPower;
-        player.grounded = false;
-    }
+const productImages = [
+"https://picsum.photos/300?1",
+"https://picsum.photos/300?2",
+"https://picsum.photos/300?3",
+"https://picsum.photos/300?4",
+"https://picsum.photos/300?5",
+"https://picsum.photos/300?6",
+"https://picsum.photos/300?7",
+"https://picsum.photos/300?8",
+"https://picsum.photos/300?9",
+"https://picsum.photos/300?10"
+];
+
+const features = [
+"High Quality",
+"Fast Charging",
+"Premium Build",
+"Latest Model",
+"Best Seller",
+"Top Rated",
+"Heavy Battery",
+"Smart Features",
+"HD Display",
+"Comfort Fit"
+];
+
+let products = [];
+
+function generateProducts(count){
+
+for(let i=1;i<=count;i++){
+
+const randomName =
+productNames[Math.floor(Math.random()*productNames.length)];
+
+const randomImage =
+productImages[Math.floor(Math.random()*productImages.length)];
+
+const randomPrice =
+Math.floor(Math.random()*90000)+1000;
+
+const oldPrice =
+randomPrice + Math.floor(Math.random()*10000);
+
+const randomRating =
+(3 + Math.random()*2).toFixed(1) + " ★";
+
+products.push({
+
+id:i,
+
+name:randomName + " " + i,
+
+price:randomPrice,
+
+oldprice:oldPrice,
+
+rating:randomRating,
+
+image:randomImage,
+
+details:[
+features[Math.floor(Math.random()*features.length)],
+features[Math.floor(Math.random()*features.length)],
+features[Math.floor(Math.random()*features.length)],
+features[Math.floor(Math.random()*features.length)]
+]
+
 });
 
-function spawnObstacle() {
-    obstacles.push({
-        x: canvas.width,
-        y: 320,
-        width: 30,
-        height: 40
-    });
 }
 
-function update() {
-    if (gameOver) return;
-
-    frame++;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Player physics
-    player.dy += player.gravity;
-    player.y += player.dy;
-
-    if (player.y >= 300) {
-        player.y = 300;
-        player.dy = 0;
-        player.grounded = true;
-    }
-
-    // Spawn obstacles
-    if (frame % 90 === 0) {
-        spawnObstacle();
-    }
-
-    // Move obstacles
-    obstacles.forEach((obs, index) => {
-        obs.x -= 6;
-
-        // Collision
-        if (
-            player.x < obs.x + obs.width &&
-            player.x + player.width > obs.x &&
-            player.y < obs.y + obs.height &&
-            player.y + player.height > obs.y
-        ) {
-            gameOver = true;
-        }
-
-        if (obs.x + obs.width < 0) {
-            obstacles.splice(index, 1);
-            score++;
-        }
-    });
-
-    // Draw ground
-    ctx.fillStyle = "#999";
-    ctx.fillRect(0, 360, canvas.width, 40);
-
-    // Draw player
-    ctx.fillStyle = "black";
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-
-    // Draw obstacles
-    ctx.fillStyle = "red";
-    obstacles.forEach(obs => {
-        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-    });
-
-    // Score
-    ctx.fillStyle = "black";
-    ctx.font = "24px Arial";
-    ctx.fillText("Score: " + score, 20, 30);
-
-    // Game over
-    if (gameOver) {
-        ctx.fillStyle = "red";
-        ctx.font = "40px Arial";
-        ctx.fillText("GAME OVER", 280, 200);
-        ctx.font = "20px Arial";
-        ctx.fillText("Refresh to restart", 320, 240);
-    }
-
-    requestAnimationFrame(update);
 }
 
-update();
+generateProducts(500);
+
+function renderProducts(data = products){
+
+const box = document.getElementById("products");
+
+box.innerHTML = "";
+
+data.forEach(product=>{
+
+box.innerHTML += `
+
+<div class="card">
+
+<img src="${product.image}">
+
+<h3>${product.name}</h3>
+
+<div class="price">
+₹${product.price}
+</div>
+
+<div class="oldprice">
+₹${product.oldprice}
+</div>
+
+<div class="rating">
+${product.rating}
+</div>
+
+<div class="details">
+• ${product.details.join("<br>• ")}
+</div>
+
+<button onclick="addToCart(${product.id})">
+Add To Cart
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+
+function addToCart(id){
+
+const item = products.find(p=>p.id===id);
+
+cart.push(item);
+
+document.getElementById("cartCount").innerText =
+cart.length;
+
+alert("Added To Cart");
+
+}
+
+function showCart(){
+
+document.getElementById("products").style.display =
+"none";
+
+document.getElementById("successPage").style.display =
+"none";
+
+document.getElementById("cartPage").style.display =
+"block";
+
+const cartItems =
+document.getElementById("cartItems");
+
+cartItems.innerHTML = "";
+
+let total = 0;
+
+cart.forEach((item,index)=>{
+
+total += item.price;
+
+cartItems.innerHTML += `
+
+<p style="margin-top:15px;font-size:18px;">
+
+${item.name} - ₹${item.price}
+
+<button class="removeBtn"
+onclick="removeItem(${index})">
+Remove
+</button>
+
+</p>
+
+`;
+
+});
+
+document.getElementById("total").innerText =
+"Total: ₹" + total;
+
+}
+
+function removeItem(index){
+
+cart.splice(index,1);
+
+document.getElementById("cartCount").innerText =
+cart.length;
+
+showCart();
+
+}
+
+function getDeliveryDate(){
+
+const date = new Date();
+
+date.setDate(date.getDate()+5);
+
+return date.toDateString();
+
+}
+
+function placeOrder(){
+
+const name =
+document.getElementById("name").value;
+
+const phone =
+document.getElementById("phone").value;
+
+const address =
+document.getElementById("address").value;
+
+const pincode =
+document.getElementById("pincode").value;
+
+if(cart.length===0){
+
+alert("Cart Empty");
+return;
+
+}
+
+if(!name || !phone || !address || !pincode){
+
+alert("Fill All Details");
+return;
+
+}
+
+const orderId =
+"ORD" + Math.floor(Math.random()*1000000);
+
+const deliveryDate =
+getDeliveryDate();
+
+document.getElementById("cartPage").style.display =
+"none";
+
+document.getElementById("successPage").style.display =
+"block";
+
+document.getElementById("orderDetails").innerHTML = `
+
+<p><b>Order ID:</b> ${orderId}</p>
+
+<br>
+
+<p><b>Name:</b> ${name}</p>
+
+<p><b>Phone:</b> ${phone}</p>
+
+<p><b>Address:</b> ${address}</p>
+
+<p><b>Pincode:</b> ${pincode}</p>
+
+<br>
+
+<p>
+Estimated Delivery:
+<b>${deliveryDate}</b>
+</p>
+
+`;
+
+cart = [];
+
+document.getElementById("cartCount").innerText = 0;
+
+}
+
+function goHome(){
+
+document.getElementById("products").style.display =
+"grid";
+
+document.getElementById("successPage").style.display =
+"none";
+
+}
+
+document.getElementById("search")
+.addEventListener("input",function(){
+
+const value =
+this.value.toLowerCase();
+
+const filtered =
+products.filter(product=>
+product.name.toLowerCase().includes(value)
+);
+
+renderProducts(filtered);
+
+});
+
+renderProducts();
+
 </script>
 
 </body>
-</html>
+    </html>
